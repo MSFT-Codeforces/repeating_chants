@@ -1,0 +1,221 @@
+## Problem: Cooldown Equal-Sum Blocks (Deterministic Output)
+
+You are given an integer array \(a[1..n]\) and two integers \(M\) and \(D\).
+
+A **block** is a contiguous subarray \((l,r)\) such that:
+
+- \(1 \le l \le r \le n\)
+- its length is at most \(M\): \(r-l+1 \le M\)
+
+A set of blocks is **valid** if:
+
+1. (**Disjointness**) Any two chosen blocks do not intersect. That is, for any two distinct blocks \((l_1,r_1)\) and \((l_2,r_2)\), either \(r_1 < l_2\) or \(r_2 < l_1\).
+2. (**Cooldown / separation**) If \((l_1,r_1)\) is completely before \((l_2,r_2)\) (i.e. \(r_1 < l_2\)), then there are at least \(D\) unused elements between them:
+   \[
+   l_2 - r_1 - 1 \ge D \quad\Leftrightarrow\quad l_2 > r_1 + D
+   \]
+3. (**Equal sum**) All chosen blocks have the same sum \(S\).
+
+Your task is to output a valid set of blocks such that:
+
+- the number of blocks \(k\) is maximum;
+- among all solutions with maximum \(k\), the common sum \(S\) is minimum;
+- among those, pick the solution whose blocks, when ordered by increasing \(r\) (and by increasing \(l\) if \(r\) ties), yields the lexicographically smallest sequence of pairs:
+  \[
+  (r_1,l_1), (r_2,l_2), \dots, (r_k,l_k).
+  \]
+
+This tie-breaking makes the required output **unique**.
+
+---
+
+### Input Format
+- First line: three integers \(n, M, D\)  
+  \(1 \le n \le 200000,\; 1 \le M \le 20,\; 0 \le D \le n\)
+- Second line: \(n\) integers \(a[i]\)  
+  \(-10^9 \le a[i] \le 10^9\)
+
+---
+
+### Output Format
+- First line: two integers \(k\) and \(S\)
+- Next \(k\) lines: \(l\; r\) for each chosen block, **in the required order** (increasing \(r\), tie by increasing \(l\)).
+
+---
+
+## Editorial
+
+### 1) Enumerate all allowed blocks in \(O(nM)\)
+Since \(M \le 20\), for each starting position \(l\) there are at most \(M\) choices of \(r\).  
+So the number of candidate blocks is
+\[
+N = \sum_{l=1}^n \min(M, n-l+1) \le nM \le 4\cdot 10^6.
+\]
+We generate all blocks \((l,r)\) with \(r-l+1 \le M\) and compute sums by extending a running sum for each \(l\).
+
+Store each block as a triple:
+\[
+(\text{sum}, r, l)
+\]
+We store \(r\) before \(l\) because the final order is by increasing \(r\), then \(l\).
+
+### 2) Sort by \((\text{sum}, r, l)\)
+Sort all triples by:
+
+1. sum ascending
+2. \(r\) ascending
+3. \(l\) ascending
+
+Then blocks with the same sum become a contiguous segment, already ordered by increasing \((r,l)\).
+
+### 3) For a fixed sum \(S\), greedy gives the maximum number of valid blocks
+Fix a sum \(S\) and consider only blocks with this sum, in increasing \((r,l)\) order.
+
+If the last chosen block ends at `lastR`, then the next chosen block must satisfy the cooldown:
+\[
+l > \text{lastR} + D.
+\]
+
+Now apply the earliest-finish-time greedy:
+
+- set `lastR = -∞`
+- scan blocks in \((r,l)\) order
+- take \((l,r)\) if \(l > \text{lastR} + D\), then set `lastR = r`
+
+**Why is it optimal?**  
+Define a transformed end \(r' = r + D\). The condition becomes \(l > r'_{\text{prev}}\), which is exactly the standard strict non-overlap condition when intervals are considered with end \(r'\). Sorting by \(r'\) is the same as sorting by \(r\) (since \(D\) is constant). The classic earliest-finish greedy is optimal for maximizing the number of intervals.
+
+This greedy also ensures disjointness automatically, because \(l > \text{lastR}\) implies the next block starts after the previous ends.
+
+### 4) For fixed \(S\), the greedy output matches the required lexicographic tie-break
+Within a fixed sum group, we always pick the first feasible block in increasing \((r,l)\) order.
+
+Among all maximum-cardinality selections for this sum, this produces the lexicographically smallest sequence of \((r,l)\) pairs:
+
+- The first greedy choice has the smallest possible \((r,l)\) among feasible first choices.
+- Because it has the smallest \(r\), it does not reduce the maximum achievable number of remaining blocks (it leaves at least as much room as any other feasible first choice).
+- Repeat the argument for subsequent choices (standard exchange argument).
+
+Therefore, for each sum \(S\), the greedy selection is exactly the unique selection demanded by the tie-break (restricted to that \(S\)).
+
+### 5) Choose the best sum
+For each distinct sum \(S\), compute \(k(S)\) via the greedy above. Choose:
+
+- the maximum \(k(S)\)
+- among ties, the minimum \(S\)
+
+Since we process sums in increasing order, we can keep the first sum achieving the best \(k\).
+
+Finally, rerun greedy for the chosen sum and output the selected blocks; they are already in the required order.
+
+### Complexity
+- Enumerating blocks: \(O(nM)\)
+- Sorting \(N \le nM\) blocks: \(O(N\log N)\)
+- Scanning all groups twice: \(O(N)\)
+- Memory: \(O(N)\)
+
+---
+
+## Reference Implementation (C++17)
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+struct Item {
+    long long sum;
+    int r;
+    int l;
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, M, D;
+    cin >> n >> M >> D;
+    vector<long long> a(n + 1);
+    for (int i = 1; i <= n; i++) cin >> a[i];
+
+    // Generate all blocks with length <= M
+    vector<Item> items;
+    items.reserve(1LL * n * M);
+
+    for (int l = 1; l <= n; l++) {
+        long long s = 0;
+        for (int r = l; r <= n && r < l + M; r++) {
+            s += a[r];
+            items.push_back({s, r, l});
+        }
+    }
+
+    sort(items.begin(), items.end(), [](const Item& A, const Item& B) {
+        if (A.sum != B.sum) return A.sum < B.sum;
+        if (A.r != B.r) return A.r < B.r;
+        return A.l < B.l;
+    });
+
+    const long long NEG_INF = -(1LL << 60);
+
+    // Pass 1: find best (max k), and among ties smallest sum (due to scan order).
+    int bestK = -1;
+    long long bestSum = 0;
+
+    for (size_t i = 0; i < items.size(); ) {
+        size_t j = i;
+        long long s = items[i].sum;
+
+        long long lastR = NEG_INF;
+        int cnt = 0;
+
+        while (j < items.size() && items[j].sum == s) {
+            int l = items[j].l;
+            int r = items[j].r;
+            if ((long long)l > lastR + D) {
+                cnt++;
+                lastR = r;
+            }
+            j++;
+        }
+
+        if (cnt > bestK) {
+            bestK = cnt;
+            bestSum = s;
+        }
+        // if cnt == bestK, keep the earlier (smaller) sum automatically
+
+        i = j;
+    }
+
+    // Pass 2: reconstruct the greedy (unique by tie-break) solution for bestSum.
+    auto cmpLower = [](const Item& it, long long value) {
+        return it.sum < value;
+    };
+    auto cmpUpper = [](long long value, const Item& it) {
+        return value < it.sum;
+    };
+
+    auto rangeL = lower_bound(items.begin(), items.end(), bestSum, cmpLower);
+    auto rangeR = upper_bound(items.begin(), items.end(), bestSum, cmpUpper);
+
+    vector<pair<int,int>> ans;
+    ans.reserve(max(0, bestK));
+
+    long long lastR = NEG_INF;
+    for (auto it = rangeL; it != rangeR; ++it) {
+        int l = it->l;
+        int r = it->r;
+        if ((long long)l > lastR + D) {
+            ans.push_back({l, r});
+            lastR = r;
+        }
+    }
+
+    cout << ans.size() << " " << bestSum << "\n";
+    for (auto [l, r] : ans) {
+        cout << l << " " << r << "\n";
+    }
+
+    return 0;
+}
+```

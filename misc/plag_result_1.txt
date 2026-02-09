@@ -1,0 +1,9 @@
+- LeetCode 1546 — *Maximum Number of Non-Overlapping Subarrays With Sum Equals Target* ([mecha-mind.medium.com](https://mecha-mind.medium.com/coding-problems-and-solutions-14-7b2d0d18fe1e?utm_source=openai))  
+```text
+https://leetcode.com/problems/maximum-number-of-non-overlapping-subarrays-with-sum-equals-target/
+```
+
+- GeeksforGeeks — *Maximize count of non-overlapping subarrays with sum K* ([geeksforgeeks.org](https://www.geeksforgeeks.org/dsa/maximize-count-of-non-overlapping-subarrays-with-sum-k/?utm_source=openai))  
+```text
+https://www.geeksforgeeks.org/dsa/maximize-count-of-non-overlapping-subarrays-with-sum-k/
+```

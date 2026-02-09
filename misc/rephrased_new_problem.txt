@@ -1,0 +1,277 @@
+# Problem: The Archivist’s Repeating Chants
+
+In the desert city of Kharif, an archivist is restoring an ancient manuscript laid out as a line of **n** glyph-stones.  
+Each stone \(i\) carries an integer resonance \(a[i]\) (it may be negative).
+
+To safely restore the manuscript, the archivist may perform **chants** on short consecutive runs of stones.
+
+A **chant** is a contiguous segment \((l,r)\) such that:
+
+- \(1 \le l \le r \le n\)
+- the chant length is at most \(M\): \(\;r-l+1 \le M\)
+
+A set of chants is considered **acceptable** if:
+
+1. **No overlap:** no two chosen chants share any stone.
+2. **Silence rule:** if one chant ends before another begins, there must be at least \(D\) untouched stones between them:  
+   if \(r_1 < l_2\), then \(\;l_2 - r_1 - 1 \ge D\) (equivalently \(l_2 > r_1 + D\)).
+3. **Same resonance:** every chosen chant must have the same total resonance \(S\) (sum of its stones).
+
+Your task is to output an acceptable set of chants with the following priorities:
+
+1. Maximize the number of chants \(k\).
+2. Among all solutions with maximum \(k\), minimize the common resonance sum \(S\).
+3. Among those, sort the chants by increasing \(r\) (and if tied, increasing \(l\)), and choose the solution with the lexicographically smallest sequence of pairs:
+   \[
+   (r_1,l_1), (r_2,l_2), \dots, (r_k,l_k).
+   \]
+These rules guarantee the required output is **unique**.
+
+---
+
+## Input Format
+
+- First line: three integers \(n, M, D\)  
+  \(1 \le n \le 200000,\; 1 \le M \le 20,\; 0 \le D \le n\)
+- Second line: \(n\) integers \(a[1],a[2],\dots,a[n]\)  
+  \(-10^9 \le a[i] \le 10^9\)
+
+---
+
+## Output Format
+
+- First line: two integers \(k\) and \(S\)
+- Next \(k\) lines: two integers \(l\; r\) describing the chosen chants, **in the required order** (increasing \(r\), tie by increasing \(l\)).
+
+---
+
+## Sample Tests
+
+### Sample 1
+**Input**
+```
+5 2 1
+1 2 1 2 1
+```
+
+**Output**
+```
+3 1
+1 1
+3 3
+5 5
+```
+
+---
+
+### Sample 2
+**Input**
+```
+6 3 0
+2 -1 2 -1 2 -1
+```
+
+**Output**
+```
+3 -1
+2 2
+4 4
+6 6
+```
+
+---
+
+### Sample 3
+**Input**
+```
+8 2 2
+3 1 2 1 3 1 2 1
+```
+
+**Output**
+```
+2 1
+2 2
+6 6
+```
+
+---
+
+# Editorial
+
+## Key observation: there are only \(O(nM)\) possible chants
+Since \(M \le 20\), for each start \(l\) there are at most \(M\) ends \(r\).  
+So the total number of candidate segments is:
+\[
+N \le nM \le 4\cdot 10^6.
+\]
+We can enumerate all chants and compute each sum in \(O(nM)\) by extending a running sum for each \(l\).
+
+Represent each chant as the triple:
+\[
+(\text{sum},\ r,\ l)
+\]
+We store \((r,l)\) because the final ordering/tie-break depends on increasing \(r\), then increasing \(l\).
+
+---
+
+## Sort all chants by \((\text{sum}, r, l)\)
+After sorting:
+
+- all chants with the same sum \(S\) form a contiguous group,
+- inside that group, chants are already in the exact order required by the final output: increasing \((r,l)\).
+
+---
+
+## For a fixed sum \(S\), greedy maximizes how many chants you can take
+Fix a sum \(S\) and look only at chants with this sum, scanned in increasing \((r,l)\).
+
+Maintain `lastR` = the end position of the last chosen chant.  
+A new chant \((l,r)\) is allowed iff:
+\[
+l > lastR + D.
+\]
+
+Now do the classic interval scheduling greedy:
+
+- initialize `lastR = -infinity`
+- scan chants in increasing \(r\) (and \(l\))
+- take a chant as soon as it is feasible
+
+### Why this greedy is optimal (with the silence rule)?
+Define a “shifted end” \(r' = r + D\).  
+Then the constraint \(l > lastR + D\) becomes:
+\[
+l > r'_{\text{previous}}
+\]
+which is exactly the standard “strictly non-overlapping intervals” condition if we pretend each interval ends at \(r'\). Sorting by \(r'\) is the same as sorting by \(r\) because \(D\) is constant. Therefore the earliest-finish-time greedy yields the maximum number of chants.
+
+---
+
+## Why the greedy also matches the lexicographic tie-break (for fixed \(S\))
+Within a fixed sum group, the greedy always picks the **first** feasible chant in increasing \((r,l)\).
+
+Among all maximum-size selections with the same \(S\), this produces the lexicographically smallest sequence \((r_1,l_1),(r_2,l_2),\dots\) (standard exchange argument: picking the smallest possible finishing chant never reduces the maximum achievable number later).
+
+So for each sum \(S\), the greedy result is exactly the unique answer for that \(S\).
+
+---
+
+## Choosing the best sum
+For every distinct sum \(S\):
+
+1. run the greedy scan within that group to compute \(k(S)\),
+2. choose the sum with:
+   - maximum \(k(S)\),
+   - and among ties, smallest \(S\).
+
+Because we process sums in increasing order (due to sorting), the first sum achieving the best \(k\) automatically has minimal \(S\).
+
+Finally, rerun greedy on the chosen sum’s group and output the selected chants.
+
+---
+
+## Complexity
+- Enumerating chants: \(O(nM)\)
+- Sorting up to \(4\cdot 10^6\) items: \(O(N\log N)\)
+- Scanning all groups + reconstruction: \(O(N)\)
+- Memory: \(O(N)\)
+
+---
+
+# Reference Implementation (C++17)
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+struct Chant {
+    long long sum;
+    int r;
+    int l;
+};
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n, M, D;
+    cin >> n >> M >> D;
+    vector<long long> a(n + 1);
+    for (int i = 1; i <= n; i++) cin >> a[i];
+
+    // Enumerate all chants of length <= M
+    vector<Chant> v;
+    v.reserve(1LL * n * M);
+
+    for (int l = 1; l <= n; l++) {
+        long long s = 0;
+        for (int r = l; r <= n && r < l + M; r++) {
+            s += a[r];
+            v.push_back({s, r, l});
+        }
+    }
+
+    sort(v.begin(), v.end(), [](const Chant& A, const Chant& B) {
+        if (A.sum != B.sum) return A.sum < B.sum;
+        if (A.r != B.r) return A.r < B.r;
+        return A.l < B.l;
+    });
+
+    const long long NEG_INF = -(1LL << 60);
+
+    // Pass 1: find best (k, then smallest sum)
+    int bestK = -1;
+    long long bestS = 0;
+
+    for (size_t i = 0; i < v.size(); ) {
+        size_t j = i;
+        long long S = v[i].sum;
+
+        long long lastR = NEG_INF;
+        int cnt = 0;
+
+        while (j < v.size() && v[j].sum == S) {
+            int l = v[j].l, r = v[j].r;
+            if ((long long)l > lastR + D) {
+                cnt++;
+                lastR = r;
+            }
+            j++;
+        }
+
+        if (cnt > bestK) {
+            bestK = cnt;
+            bestS = S;
+        }
+        // If cnt == bestK, we keep the earlier sum automatically (smaller S)
+        i = j;
+    }
+
+    // Pass 2: reconstruct answer for bestS
+    auto lb = lower_bound(v.begin(), v.end(), bestS,
+                          [](const Chant& c, long long val){ return c.sum < val; });
+    auto ub = upper_bound(v.begin(), v.end(), bestS,
+                          [](long long val, const Chant& c){ return val < c.sum; });
+
+    vector<pair<int,int>> ans;
+    ans.reserve(max(0, bestK));
+
+    long long lastR = NEG_INF;
+    for (auto it = lb; it != ub; ++it) {
+        int l = it->l, r = it->r;
+        if ((long long)l > lastR + D) {
+            ans.push_back({l, r});
+            lastR = r;
+        }
+    }
+
+    cout << ans.size() << " " << bestS << "\n";
+    for (auto [l, r] : ans) {
+        cout << l << " " << r << "\n";
+    }
+    return 0;
+}
+```
+
+If you want, I can also provide a memory-optimized variant (same logic) that reduces overhead further for tighter limits.

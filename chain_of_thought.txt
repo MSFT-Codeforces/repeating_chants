@@ -1,0 +1,191 @@
+**[section_01]**
+Parsing the task requirements precisely
+**[atomic_01_01]**
+We are given an integer array $a[1..n]$, where values may be negative. The fundamental object we can choose is a contiguous segment $(l,r)$ that represents indices $l,l+1,\dots,r$ with $1 \le l \le r \le n$.
+
+**[atomic_01_02]**
+A segment is considered a valid “chant” only if its length is at most $M$, i.e. $r-l+1 \le M$. This restriction defines which segments are allowed to appear in the output; longer segments are not permitted under any circumstances.
+
+**[atomic_01_03]**
+Each chant $(l,r)$ has a resonance sum
+$$S(l,r)=\sum_{i=l}^{r} a[i].$$
+The task requires choosing a set of chants such that every selected chant has exactly the same resonance sum $S$.
+
+**[atomic_01_04]**
+The set of chosen chants must satisfy two positional constraints:
+1. No overlap: no index can belong to more than one chosen chant.
+2. Silence rule: for two chosen chants $(l_1,r_1)$ and $(l_2,r_2)$ with $r_1 < l_2$, there must be at least $D$ untouched indices between them:
+$$l_2 - r_1 - 1 \ge D \iff l_2 > r_1 + D.$$
+This means the next chant must start strictly after $r_1 + D$.
+
+**[atomic_01_05]**
+Among all acceptable sets, the output is determined by a strict priority order:
+1. Maximize the number of chosen chants $k$.
+2. Among those, minimize the common sum $S$.
+3. Among those, sort the chosen chants by increasing $r$ (and if $r$ ties, increasing $l$), then consider the sequence of pairs
+$$(r_1,l_1),(r_2,l_2),\dots,(r_k,l_k).$$
+Choose the solution with the lexicographically smallest such sequence. This last rule is what makes the answer unique even when multiple maximum-size solutions exist.
+
+**[atomic_01_06]**
+The required printing order matches the tie-break ordering: after printing $k$ and $S$, we must print the chosen segments as lines $(l,r)$ sorted by increasing $r$, and for equal $r$ by increasing $l$. Any valid solution must be output in exactly that order.
+
+---
+
+**[section_02]**
+Constructing edge cases and correctness checks
+**[atomic_02_01]**
+Smallest input sizes validate that the definition is handled correctly:
+- $n=1$, $M=1$ ensures only the segment $(1,1)$ is allowed.
+- Negative-only arrays ensure the algorithm must allow negative $S$ and still choose segments if that maximizes $k$.
+
+**[atomic_02_02]**
+Extreme silence constraints reveal spacing behavior:
+- $D=0$ implies consecutive chants must satisfy $l_2 > r_1$, so they may touch but cannot overlap.
+- $D \ge n$ implies at most one chant can be selected, regardless of sums, because no second chant can be placed with such a large required gap.
+
+**[atomic_02_03]**
+Extreme chant length constraints validate eligibility filtering:
+- $M=1$ restricts chants to single elements; the resonance sum becomes simply $a[i]$.
+- $M=2$ creates both singletons and adjacent pairs, often producing many repeated sums.
+
+**[atomic_02_04]**
+Arrays engineered to create many equal-sum segments test tie-breaking:
+- All zeros: every segment has sum $0$, so the output must be the lexicographically smallest among maximum $k$.
+- Repetitive patterns like $[1,2,1,2,1,\dots]$ can produce many identical sums across different $(l,r)$.
+
+**[atomic_02_05]**
+Cases where multiple sums yield the same maximum $k$ test the “minimize $S$” rule:
+- For example, if sum $S=-1$ allows $k=3$ chants and sum $S=0$ also allows $k=3$, the output must choose $S=-1$.
+
+**[atomic_02_06]**
+Cases where multiple solutions exist for the same $(k,S)$ test lexicographic uniqueness:
+- Construct inputs where two different maximal selections with the same sum are possible, and verify that the reported one is the smallest by the sequence $(r_i,l_i)$ when ordered by increasing $r$ then $l$.
+
+---
+
+**[section_03]**
+Implementing brute-force subset selection and rejecting it
+**[atomic_03_01]**
+The most naive approach is to generate all possible chants (all valid segments) and then examine every subset of these chants, keeping only those subsets that satisfy: (1) same sum $S$ for all segments, (2) no overlap, (3) silence rule. After filtering, we would select the best subset using the priority rules.
+
+**[atomic_03_02]**
+Even verifying a single subset is non-trivial: we would need to compute or look up each segment’s sum, ensure all sums match, sort the chosen segments by position to check overlaps and gaps, and then compute the comparison keys for maximizing $k$, minimizing $S$, and lexicographic tie-breaking.
+
+**[atomic_03_03]**
+The fatal issue is the number of subsets. If there are $N$ candidate chants, the subset count is $2^N$. Since even with a small $M$ we can have $N \approx nM$, this becomes astronomically large and cannot be explored.
+
+**[atomic_03_04]**
+Backtracking does not rescue this approach because the “all sums equal” constraint is global: choosing the first segment implicitly chooses $S$, but there can be many possible first segments and thus many possible sums to explore. The branching factor remains enormous, and pruning opportunities are limited.
+
+**[atomic_03_05]**
+Complexity summary:
+- Time: $\Theta(2^N)$ in the worst case.
+- Space: at least $\Theta(N)$ to store candidate segments or recursion state.
+This is infeasible and forces abandoning subset enumeration entirely.
+
+---
+
+**[section_04]**
+Enumerating all segments with naive sum computation and rejecting it
+**[atomic_04_01]**
+A different naive direction is to focus on segment sums first: enumerate every segment $(l,r)$ of the array and compute its sum directly by adding elements $a[l]+a[l+1]+\dots+a[r]$.
+
+**[atomic_04_02]**
+Without prefix sums, computing one segment sum costs $\Theta(r-l+1)$ time. Since there are $\Theta(n^2)$ segments total, the total cost becomes
+$$\sum_{l=1}^{n}\sum_{r=l}^{n} \Theta(r-l+1)=\Theta(n^3).$$
+This is already far too slow for $n$ up to $200000$.
+
+**[atomic_04_03]**
+Even if we imagined that after computing sums we could group segments by sum $S$ and then decide how many can be chosen per sum, the enumeration itself dominates: we cannot even finish listing all segments and their sums.
+
+**[atomic_04_04]**
+Memory is also prohibitive because grouping or sorting requires storing information about segments, and the number of segments is $\Theta(n^2)$, which is too large to fit in memory at these limits.
+
+**[atomic_04_05]**
+Complexity summary:
+- Time: $\Theta(n^3)$ due to naive sum computation across all segments.
+- Space: up to $\Theta(n^2)$ if segments are stored for grouping.
+This is strictly better than the exponential subset approach but still completely infeasible.
+
+---
+
+**[section_05]**
+Using prefix sums and global sorting on all $\Theta(n^2)$ segments and rejecting it
+**[atomic_05_01]**
+A natural refinement is to use prefix sums so each segment sum can be computed in $O(1)$ time. This reduces full segment enumeration from $\Theta(n^3)$ to $\Theta(n^2)$ time for generating all $(l,r)$ along with $S(l,r)$.
+
+**[atomic_05_02]**
+To avoid repeatedly scanning segments “per sum,” we can sort segments by a composite key $(\text{sum}, r, l)$. This would place all segments with the same sum $S$ contiguously and, within that group, order them by increasing $r$ then increasing $l$, matching the output tie-break ordering.
+
+**[atomic_05_03]**
+After sorting, we can scan each contiguous sum group and count how many segments can be selected under the silence rule by maintaining $\text{lastR}$ and accepting a segment $(l,r)$ iff $l > \text{lastR} + D$. This yields a candidate $k(S)$ for each sum.
+
+**[atomic_05_04]**
+Despite being algorithmically well-structured, it still fails because it relies on generating and sorting all $\Theta(n^2)$ segments:
+- Sorting requires $\Theta(n^2 \log n)$ comparisons.
+- Storing $\Theta(n^2)$ segment records is impossible for the given $n$.
+
+**[atomic_05_05]**
+Complexity summary:
+- Time: $\Theta(n^2 \log n)$ (dominated by sorting).
+- Space: $\Theta(n^2)$ to store segment records.
+This improves over $\Theta(n^3)$ but is still infeasible; we must use the problem’s length bound $M$ to reduce the candidate set size.
+
+---
+
+**[section_06]**
+Exploiting $M \le 20$ to enumerate only valid chants and solve by sorting and greedy
+**[atomic_06_01]**
+The decisive constraint is that only segments of length at most $M$ are allowed, and $M \le 20$. For each start $l$, there are at most $M$ valid ends $r$, so the total number of candidate chants is
+$$N \le nM,$$
+which is at most $4 \cdot 10^6$ under constraints.
+
+**[atomic_06_02]**
+We enumerate exactly these $N$ valid chants and compute each sum by extending a running sum for a fixed $l$ as $r$ increases. Each chant is recorded as a triple $(\text{sum}, r, l)$, using $(r,l)$ because the final tie-break depends on ordering by $r$ then $l$.
+
+**[atomic_06_03]**
+We sort all $N$ triples by $(\text{sum}, r, l)$. This accomplishes two required structural properties:
+- All chants with the same sum $S$ form a contiguous block for single-pass processing.
+- Inside a block of fixed $S$, chants are already ordered by increasing $(r,l)$, which aligns with how we must compare outputs lexicographically.
+
+**[atomic_06_04]**
+For a fixed sum $S$, scanning chants in increasing $(r,l)$ and greedily taking the first feasible chant maximizes the number of chants. Feasibility is exactly:
+$$l > \text{lastR} + D.$$
+This is the standard earliest-finish-time greedy if we interpret an “effective end” as $r' = r + D$; because $D$ is constant, ordering by $r'$ is equivalent to ordering by $r$.
+
+**[atomic_06_05]**
+The same greedy scan also enforces the lexicographic tie-break for a fixed $S$: when chants are scanned in increasing $(r,l)$, choosing the earliest feasible chant ensures the first pair $(r_1,l_1)$ is as small as possible; repeating this argument step-by-step yields the lexicographically smallest sequence among all maximum-size selections with sum $S$.
+
+**[atomic_06_06]**
+We select the globally best sum by scanning each sum block once to compute $k(S)$ and tracking the maximum. Since sums are encountered in increasing order after sorting, if two sums achieve the same best $k$, keeping the first one automatically yields the smallest $S$, matching the problem’s second priority.
+
+**[atomic_06_07]**
+We then reconstruct the actual chosen chants for the selected sum $S$ by rescanning only its block and applying the same greedy acceptance rule, recording segments $(l,r)$ for output in the already-correct increasing $(r,l)$ order.
+
+**[atomic_06_08]**
+Complexity summary (letting $N=nM$):
+- Time: $O(N)$ to enumerate, $O(N \log N)$ to sort, and $O(N)$ to scan groups, so overall $O(N \log N)$.
+- Space: $O(N)$ for the chant list and $O(k)$ for the answer.
+This is feasible because $M$ is small, turning the candidate space from $\Theta(n^2)$ into $O(n)$.
+
+---
+
+**[section_07]**
+Replacing comparison sorting with radix sorting to remove the $\log$ factor
+**[atomic_07_01]**
+In the previous approach, sorting $N$ triples dominates time with $O(N \log N)$. Since $N=nM$ and $M$ is a small constant, it can be appealing to replace comparison sorting with radix sorting (a non-comparison sort) to achieve linear-time sorting in $O(N)$ for fixed-width integer keys.
+
+**[atomic_07_02]**
+The order we need is lexicographic by $(\text{sum}, r, l)$. Here $\text{sum}$ fits in signed 64-bit, while $r$ and $l$ fit in 32-bit. Radix sorting can achieve this exact order by performing stable passes on the least-significant “digits” first, ensuring that earlier-field ordering is preserved after later passes.
+
+**[atomic_07_03]**
+A key implementation consideration is that $\text{sum}$ can be negative. Radix sorting typically operates on unsigned representations, so we need a mapping that preserves signed order (for example, flipping the sign bit in two’s complement representation). This keeps the sorted order consistent with standard signed integer comparison.
+
+**[atomic_07_04]**
+After radix sorting produces the identical ordering as a comparison sort, all subsequent logic is unchanged: sum blocks remain contiguous, and within each block chants are ordered by increasing $(r,l)$, enabling the same greedy scan per sum and the same deterministic reconstruction.
+
+**[atomic_07_05]**
+Complexity summary of this refinement:
+- Time: $O(N)$ for radix sorting (constant number of passes) plus $O(N)$ scanning, yielding $O(N)$ total time.
+- Space: $O(N)$, typically requiring an auxiliary buffer array for stable radix passes.
+This is strictly more efficient asymptotically than $O(N \log N)$, though it has higher constant factors and added implementation complexity.

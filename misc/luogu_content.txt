@@ -1,0 +1,71 @@
+Please, read the editorial of the hard edition.
+
+```cpp
+#include <bits/stdc++.h>
+
+#define ll long long
+#define pb push_back
+
+using namespace std;
+
+const ll MAXN = 2000;
+
+ll n, a[MAXN], pr[MAXN];
+map<ll, vector< pair<ll, ll> >  > mp;
+
+bool cmp(pair<ll, ll> a, pair<ll, ll> b){
+    return a.second < b.second;
+}
+
+vector<pair<ll, ll> > get_ans(vector<pair<ll, ll> > & v){
+    sort(v.begin(), v.end(), cmp);
+    vector<pair<ll, ll> > ans;
+    ll len = -20;
+
+    for(int i = 0; i < v.size(); ++i){
+        if(v[i].first > len){
+            len = v[i].second;
+            ans.pb(v[i]);
+        }
+    }
+    return ans;
+}
+
+int main()
+{
+    ios_base::sync_with_stdio(0), cin.tie(0), cout.tie(0);
+
+    cin >> n;
+
+    for(int i = 1; i <= n; ++i){
+        cin >> a[i];
+        pr[i] = pr[i-1] + a[i];
+    }
+
+    for(int i = 1; i <= n; ++i){
+        for(int j = i; j <= n; ++j){
+            mp[pr[j] - pr[i-1]].pb({i, j});
+        }
+    }
+
+    ll ans = 0;
+    vector<pair<ll, ll> > vans;
+
+    for(auto i : mp){
+        vector<pair<ll, ll> > v = (i).second;
+        vector<pair<ll, ll> > cur = get_ans(v);
+        if(cur.size() > ans){
+            ans = cur.size();
+            vans = cur;
+        }
+    }
+
+    cout << ans << '\n';
+    for(auto i : vans){
+        cout << i.first << ' ' << i.second << '\n';
+    }
+
+    return 0;
+}
+
+```

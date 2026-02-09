@@ -1,0 +1,60 @@
+
+You are an expert competitive programmer. 
+You will be provided with a problem statement, first analyze the problem, then provide your solution in Python. 
+Consider edge cases, time complexity, and space complexity. 
+Make sure your solution handles all constraints mentioned in the problem. 
+Your final solution should be a complete, compilable Python program in a python codeblock.
+
+**Repeating Chants**
+
+You are given an array of $n$ integers $a[1],a[2],\dots,a[n]$ (values may be negative). A **chant** is a contiguous segment $(l,r)$ such that $1 \le l \le r \le n$ and its length is at most $M$, i.e. $r-l+1 \le M$.
+
+A set of chants is **acceptable** if:
+
+1. **No overlap:** no two chosen chants share an index.
+2. **Silence rule:** between any two consecutive chosen chants there are at least $D$ untouched stones. Formally, for two chosen chants $(l_1,r_1)$ and $(l_2,r_2)$ with $r_1 < l_2$, it must hold that
+   $$l_2 - r_1 - 1 \ge D \quad \text{(equivalently } l_2 > r_1 + D\text{)}.$$
+3. **Same resonance:** all chosen chants have the same sum
+   $$S = \sum_{i=l}^{r} a[i].$$
+
+Among all acceptable sets, choose the unique one according to the following priorities:
+
+1. Maximize the number of chants $k$.
+2. Among those, minimize the common sum $S$.
+3. Among those, sort the chosen chants by increasing $r$ (and for equal $r$, increasing $l$). Let this ordered list be
+   $$(r_1,l_1),(r_2,l_2),\dots,(r_k,l_k).$$
+   Choose the solution with the lexicographically smallest such sequence.
+
+You must output the chosen chants in the required order (increasing $r$, tie by increasing $l$).
+
+**Input Format:-**
+
+- The first line contains three integers $n$, $M$, $D$.
+- The second line contains $n$ integers $a[1],a[2],\dots,a[n]$.
+
+**Output Format:-**
+
+- Print two integers $k$ and $S$.
+- Then print $k$ lines, each containing two integers $l$ and $r$ describing a chosen chant, in increasing order of $r$ (and for equal $r$, increasing $l$).
+
+**Constraints:-**
+
+- $1 \le n \le 200000$
+- $1 \le M \le 20$
+- $0 \le D \le n$
+- $-10^9 \le a[i] \le 10^9$
+
+**Examples:-**
+ - **Input:**
+```
+5 2 1
+1 2 1 2 1
+```
+
+ - **Output:**
+```
+3 1
+1 1
+3 3
+5 5
+```
