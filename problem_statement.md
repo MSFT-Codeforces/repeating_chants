@@ -1,5 +1,3 @@
-**Repeating Chants**
-
 Time Limit: **32 seconds**
 
 Memory Limit: **256 MB**

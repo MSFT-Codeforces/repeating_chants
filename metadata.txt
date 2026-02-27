@@ -7,3 +7,4 @@
 **Number of Approaches:** - 5, ($O(2^N)$ -> $O(n^3)$ -> $O(n^2 \log n)$ -> $O(N \log N)$ with $N=nM$ -> $O(N+n)$ with $N=nM$)
 **Number of Chains:** - 7
 **Model-Breaking:** - False
+**GitHub:** - https://github.com/MSFT-Codeforces/repeating_chants

@@ -1,15 +1,15 @@
 {
-  "original": "https://www.codeforces.com/problemset/problem/1141/F1",
-  "title": "Repeating Chants",
-  "tags": [
-    "Greedy Algorithms",
-    "Sorting Algorithms",
-    "Arrays and Lists",
-    "Algorithm Complexity and Big O Notation"
-  ],
-  "model_breaking": false,
-  "time": 32,
-  "space": 256,
-  "new_colab_link": "https://colab.research.google.com/drive/1F7YNGVL6kWdSrVJT0VrZ4pFJUmNP4Kft",
-  "github_link": "https://github.com/MSFT-Codeforces/repeating_chants"
+    "original": "https://www.codeforces.com/problemset/problem/1141/F1",
+    "title": "Repeating Chants",
+    "tags": [
+        "Greedy Algorithms",
+        "Sorting Algorithms",
+        "Arrays and Lists",
+        "Algorithm Complexity and Big O Notation"
+    ],
+    "model_breaking": false,
+    "time": 32,
+    "space": 256,
+    "new_colab_link": "https://colab.research.google.com/drive/1F7YNGVL6kWdSrVJT0VrZ4pFJUmNP4Kft",
+    "github_link": "https://github.com/MSFT-Codeforces/repeating_chants"
 }
