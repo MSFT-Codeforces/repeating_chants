@@ -329,7 +329,7 @@ def main() -> None:
     for left_position, right_position in selected_chants:
         output_lines.append(f"{left_position} {right_position}\n")
 
-    sys.stdout.write("".join(output_lines))
+    sys.stdout.write("\n".join(output_lines))
 
 
 if __name__ == "__main__":
